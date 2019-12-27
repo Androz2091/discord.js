@@ -42,7 +42,7 @@ class Guild extends Base {
 
     /**
      * A collection of channels that are in this guild. The key is the channel's ID, the value is the channel
-     * @type {GuildChannelStore<Snowflake, GuildChannel>}
+     * @type {GuildChannelStore<Snowflake, Gu ildChannel>}
      */
     this.channels = new GuildChannelStore(this);
 
@@ -440,11 +440,11 @@ class Guild extends Base {
 
   /**
    * The acronym that shows up in place of a guild icon.
-   * @type {string}
-   * @readonly
+   * @param {boolean} mobile Whether to return the acronym displayed on mobile devices
+   * @returns {string}
    */
-  get nameAcronym() {
-    return this.name.replace(/\w+/g, name => name[0]).replace(/\s/g, '');
+  nameAcronym(mobile = false) {
+    return this.name.replace(/\w+/g, name => (mobile && /\d/.test(name) ? name : name.name[0]).replace(/\s/g, '');
   }
 
   /**
