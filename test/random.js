@@ -1,19 +1,23 @@
+/* eslint-disable */
+
 'use strict';
 
-const Discord = require('../');
 const request = require('superagent');
-const fs = require('fs');
+const ytdl = require('ytdl-core');
+const { token, song } = require('./auth.js');
+const Discord = require('../src');
 
 console.time('magic');
 
-const client = new Discord.Client({ fetchAllMembers: true, apiRequestMethod: 'sequential' });
+const client = new Discord.Client({ fetchAllMembers: true });
 
-const { email, password, token, usertoken, song } = require('./auth.js');
-
-client.login(token).then(atoken => console.log('logged in')).catch(console.error);
+client
+  .login(token)
+  .then(() => console.log('logged in'))
+  .catch(console.error);
 
 client.on('ready', () => {
-  console.log(`ready with ${client.users.size} users`);
+  console.log(`ready with ${client.users.cache.size} users`);
   console.timeEnd('magic');
 });
 
@@ -26,21 +30,22 @@ client.on('message', message => {
   if (true) {
     if (message.content === 'makechann') {
       if (message.channel.guild) {
-        message.channel.guild.createChannel('hi', 'text').then(console.log);
+        message.channel.guild.channels.create('hi', { type: 'text' }).then(console.log);
       }
     }
 
     if (message.content === 'imma queue pls') {
       let count = 0;
       let ecount = 0;
-      for(let x = 0; x < 4000; x++) {
-        message.channel.send(`this is message ${x} of 3999`)
+      for (let x = 0; x < 4000; x++) {
+        message.channel
+          .send(`this is message ${x} of 3999`)
           .then(m => {
             count++;
             console.log('reached', count, ecount);
           })
-          .catch(m => {
-            console.error(m);
+          .catch(e => {
+            console.error(e);
             ecount++;
             console.log('reached', count, ecount);
           });
@@ -48,8 +53,9 @@ client.on('message', message => {
     }
 
     if (message.content === 'myperms?') {
-      message.channel.send('Your permissions are:\n' +
-        JSON.stringify(message.channel.permissionsFor(message.author).serialize(), null, 4));
+      message.channel.send(
+        `Your permissions are:\n${JSON.stringify(message.channel.permissionsFor(message.author).serialize(), null, 4)}`,
+      );
     }
 
     if (message.content === 'delchann') {
@@ -65,47 +71,58 @@ client.on('message', message => {
     }
 
     if (message.content.startsWith('botavatar')) {
-      request
-        .get('url')
-        .end((err, res) => {
-          client.user.setAvatar(res.body).catch(console.error)
-            .then(user => message.channel.send('Done!'));
-        });
+      request.get('url').end((err, res) => {
+        client.user
+          .setAvatar(res.body)
+          .catch(console.error)
+          .then(user => message.channel.send('Done!'));
+      });
     }
 
     if (message.content.startsWith('gn')) {
-      message.guild.setName(message.content.substr(3))
+      message.guild
+        .setName(message.content.substr(3))
         .then(guild => console.log('guild updated to', guild.name))
         .catch(console.error);
     }
 
     if (message.content === 'leave') {
-      message.guild.leave().then(guild => console.log('left guild', guild.name)).catch(console.error);
+      message.guild
+        .leave()
+        .then(guild => console.log('left guild', guild.name))
+        .catch(console.error);
     }
 
     if (message.content === 'stats') {
       let m = '';
-      m += `I am aware of ${message.guild.channels.size} channels\n`;
-      m += `I am aware of ${message.guild.members.size} members\n`;
-      m += `I am aware of ${client.channels.size} channels overall\n`;
-      m += `I am aware of ${client.guilds.size} guilds overall\n`;
-      m += `I am aware of ${client.users.size} users overall\n`;
-      message.channel.send(m).then(msg => msg.edit('nah')).catch(console.error);
+      m += `I am aware of ${message.guild.channels.cache.size} channels\n`;
+      m += `I am aware of ${message.guild.members.cache.size} members\n`;
+      m += `I am aware of ${client.channels.cache.size} channels overall\n`;
+      m += `I am aware of ${client.guilds.cache.size} guilds overall\n`;
+      m += `I am aware of ${client.users.cache.size} users overall\n`;
+      message.channel
+        .send(m)
+        .then(msg => msg.edit('nah'))
+        .catch(console.error);
     }
 
     if (message.content === 'messageme!') {
       message.author.send('oh, hi there!').catch(e => console.log(e.stack));
     }
 
-    if (message.content === 'don\'t dm me') {
+    if (message.content === "don't dm me") {
       message.author.deleteDM();
     }
 
     if (message.content.startsWith('kick')) {
-      message.guild.member(message.mentions[0]).kick().then(member => {
-        console.log(member);
-        message.channel.send('Kicked!' + member.user.username);
-      }).catch(console.error);
+      message.guild
+        .member(message.mentions.users.first())
+        .kick()
+        .then(member => {
+          console.log(member);
+          message.channel.send(`Kicked!${member.user.username}`);
+        })
+        .catch(console.error);
     }
 
     if (message.content === 'ratelimittest') {
@@ -122,9 +139,13 @@ client.on('message', message => {
     }
 
     if (message.content === 'makerole') {
-      message.guild.createRole().then(role => {
-        message.channel.send(`Made role ${role.name}`);
-      }).catch(console.error);
+      message.guild
+        .roles
+        .create()
+        .then(role => {
+          message.channel.send(`Made role ${role.name}`);
+        })
+        .catch(console.error);
     }
   }
 });
@@ -134,43 +155,58 @@ function nameLoop(user) {
 }
 
 function chanLoop(channel) {
-  channel.setName(channel.name + 'a').then(chanLoop).catch(console.error);
+  channel
+    .setName(`${channel.name}a`)
+    .then(chanLoop)
+    .catch(console.error);
 }
 
 client.on('message', msg => {
   if (msg.content.startsWith('?raw')) {
-    msg.channel.send('```' + msg.content + '```');
+    msg.channel.send(`\`\`\`${msg.content}\`\`\``);
   }
 
   if (msg.content.startsWith('#eval') && msg.author.id === '66564597481480192') {
     try {
-      const com = eval(msg.content.split(" ").slice(1).join(" "));
-      msg.channel.send('```\n' + com + '```');
-    } catch(e) {
-      msg.channel.send('```\n' + e + '```');
+      const com = eval(
+        msg.content
+          .split(' ')
+          .slice(1)
+          .join(' '),
+      );
+      msg.channel.send(`\`\`\`\n${com}\`\`\``);
+    } catch (e) {
+      msg.channel.send(`\`\`\`\n${e}\`\`\``);
     }
   }
 });
-
-const ytdl = require('ytdl-core');
 
 let disp, con;
 
 client.on('message', msg => {
   if (msg.content.startsWith('/play')) {
     console.log('I am now going to play', msg.content);
-    const chan = msg.content.split(' ').slice(1).join(' ');
-        const s = ytdl(chan, {filter:'audioonly'}, { passes : 3 });
+    const chan = msg.content
+      .split(' ')
+      .slice(1)
+      .join(' ');
+    const s = ytdl(chan, { filter: 'audioonly' }, { passes: 3 });
     s.on('error', e => console.log(`e w stream 1 ${e}`));
-    con.playStream(s);
+    con.play(s);
   }
   if (msg.content.startsWith('/join')) {
-    const chan = msg.content.split(' ').slice(1).join(' ');
-    msg.channel.guild.channels.get(chan).join()
+    const chan = msg.content
+      .split(' ')
+      .slice(1)
+      .join(' ');
+    msg.channel.guild.channels
+      .cache
+      .get(chan)
+      .join()
       .then(conn => {
         con = conn;
         msg.reply('done');
-        const s = ytdl(song, {filter:'audioonly'}, { passes : 3 });
+        const s = ytdl(song, { filter: 'audioonly' }, { passes: 3 });
         s.on('error', e => console.log(`e w stream 2 ${e}`));
         disp = conn.playStream(s);
         conn.player.on('debug', console.log);
@@ -193,12 +229,15 @@ client.on('messageReactionRemove', (reaction, user) => {
 client.on('message', m => {
   if (m.content.startsWith('#reactions')) {
     const mID = m.content.split(' ')[1];
-    m.channel.fetchMessage(mID).then(rM => {
-      for (const reaction of rM.reactions.values()) {
-        reaction.fetchUsers().then(users => {
+    m.channel.messages.fetch(mID).then(rM => {
+      for (const reaction of rM.reactions.cache.values()) {
+        reaction.users.fetch().then(users => {
           m.channel.send(
             `The following gave that message ${reaction.emoji}:\n` +
-            `${users.map(u => u.username).map(t => `- ${t}`).join('\n')}`
+              `${users
+                .map(u => u.username)
+                .map(t => `- ${t}`)
+                .join('\n')}`,
           );
         });
       }

@@ -1,15 +1,15 @@
 'use strict';
 
+const EventEmitter = require('events');
 const Collection = require('../../util/Collection');
 const Util = require('../../util/Util');
-const EventEmitter = require('events');
 
 /**
  * Filter to be applied to the collector.
  * @typedef {Function} CollectorFilter
  * @param {...*} args Any arguments received by the listener
  * @param {Collection} collection The items collected by this collector
- * @returns {boolean}
+ * @returns {boolean|Promise<boolean>}
  */
 
 /**
@@ -86,10 +86,10 @@ class Collector extends EventEmitter {
    * @param {...*} args The arguments emitted by the listener
    * @emits Collector#collect
    */
-  handleCollect(...args) {
+  async handleCollect(...args) {
     const collect = this.collect(...args);
 
-    if (collect && this.filter(...args, this.collected)) {
+    if (collect && (await this.filter(...args, this.collected))) {
       this.collected.set(collect, args[0]);
 
       /**
@@ -189,11 +189,59 @@ class Collector extends EventEmitter {
   }
 
   /**
+   * Resets the collectors timeout and idle timer.
+   * @param {Object} [options] Options
+   * @param {number} [options.time] How long to run the collector for in milliseconds
+   * @param {number} [options.idle] How long to stop the collector after inactivity in milliseconds
+   */
+  resetTimer({ time, idle } = {}) {
+    if (this._timeout) {
+      this.client.clearTimeout(this._timeout);
+      this._timeout = this.client.setTimeout(() => this.stop('time'), time || this.options.time);
+    }
+    if (this._idletimeout) {
+      this.client.clearTimeout(this._idletimeout);
+      this._idletimeout = this.client.setTimeout(() => this.stop('idle'), idle || this.options.idle);
+    }
+  }
+
+  /**
    * Checks whether the collector should end, and if so, ends it.
    */
   checkEnd() {
     const reason = this.endReason();
     if (reason) this.stop(reason);
+  }
+
+  /**
+   * Allows collectors to be consumed with for-await-of loops
+   * @see {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/for-await...of}
+   */
+  async *[Symbol.asyncIterator]() {
+    const queue = [];
+    const onCollect = item => queue.push(item);
+    this.on('collect', onCollect);
+
+    try {
+      while (queue.length || !this.ended) {
+        if (queue.length) {
+          yield queue.shift();
+        } else {
+          // eslint-disable-next-line no-await-in-loop
+          await new Promise(resolve => {
+            const tick = () => {
+              this.removeListener('collect', tick);
+              this.removeListener('end', tick);
+              return resolve();
+            };
+            this.on('collect', tick);
+            this.on('end', tick);
+          });
+        }
+      }
+    } finally {
+      this.removeListener('collect', onCollect);
+    }
   }
 
   toJSON() {

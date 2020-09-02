@@ -24,16 +24,16 @@ client.on('ready', () => {
 });
 
 client.on('message', message => {
-	// If the message is '!rip'
-	if (message.content === '!rip') {
-		// Create the attachment using MessageAttachment
-		const attachment = new MessageAttachment('https://i.imgur.com/w3duR07.png');
-		// Send the attachment in the message channel
-		message.channel.send(attachment);
-	}
+  // If the message is '!rip'
+  if (message.content === '!rip') {
+    // Create the attachment using MessageAttachment
+    const attachment = new MessageAttachment('https://i.imgur.com/w3duR07.png');
+    // Send the attachment in the message channel
+    message.channel.send(attachment);
+  }
 });
 
-// Log our bot in using the token from https://discordapp.com/developers/applications/me
+// Log our bot in using the token from https://discord.com/developers/applications
 client.login('your token here');
 ```
 
@@ -59,16 +59,16 @@ client.on('ready', () => {
 });
 
 client.on('message', message => {
-	// If the message is '!rip'
-	if (message.content === '!rip') {
-		// Create the attachment using MessageAttachment
-		const attachment = new MessageAttachment('https://i.imgur.com/w3duR07.png');
-		// Send the attachment in the message channel with a content
-		message.channel.send(`${message.author},`, attachment);
-	}
+  // If the message is '!rip'
+  if (message.content === '!rip') {
+    // Create the attachment using MessageAttachment
+    const attachment = new MessageAttachment('https://i.imgur.com/w3duR07.png');
+    // Send the attachment in the message channel with a content
+    message.channel.send(`${message.author},`, attachment);
+  }
 });
 
-// Log our bot in using the token from https://discordapp.com/developers/applications/me
+// Log our bot in using the token from https://discord.com/developers/applications
 client.login('your token here');
 ```
 
@@ -96,22 +96,22 @@ client.on('ready', () => {
 });
 
 client.on('message', message => {
-	// If the message is '!rip'
-	if (message.content === '!rip') {
-		// Create the attachment using MessageAttachment
-		const attachment = new MessageAttachment('./rip.png');
-		// Send the attachment in the message channel with a content
-		message.channel.send(`${message.author},`, attachment);
-	}
+  // If the message is '!rip'
+  if (message.content === '!rip') {
+    // Create the attachment using MessageAttachment
+    const attachment = new MessageAttachment('./rip.png');
+    // Send the attachment in the message channel with a content
+    message.channel.send(`${message.author},`, attachment);
+  }
 });
 
-// Log our bot in using the token from https://discordapp.com/developers/applications/me
+// Log our bot in using the token from https://discord.com/developers/applications
 client.login('your token here');
 ```
 
 The results are the same as the URL examples:
 
-![Image showing result](/static/attachment-example1.png)
+![Image showing result](/static/attachment-example2.png)
 
 But what if you have a buffer from an image? Or a text document? Well, it's the same as sending a local file or a URL!
 
@@ -137,24 +137,24 @@ client.on('ready', () => {
 });
 
 client.on('message', message => {
-	// If the message is '!memes'
-	if (message.content === '!memes') {
-		// Get the buffer from the 'memes.txt', assuming that the file exists
-		const buffer = fs.readFileSync('./memes.txt');
+  // If the message is '!memes'
+  if (message.content === '!memes') {
+    // Get the buffer from the 'memes.txt', assuming that the file exists
+    const buffer = fs.readFileSync('./memes.txt');
 
-		/**
-		 * Create the attachment using MessageAttachment,
-		 * overwritting the default file name to 'memes.txt'
-		 * Read more about it over at
-		 * http://discord.js.org/#/docs/main/master/class/MessageAttachment
-		 */
-		const attachment = new MessageAttachment(buffer, 'memes.txt');
-		// Send the attachment in the message channel with a content
-		message.channel.send(`${message.author}, here are your memes!`, attachment);
-	}
+    /**
+     * Create the attachment using MessageAttachment,
+     * overwritting the default file name to 'memes.txt'
+     * Read more about it over at
+     * http://discord.js.org/#/docs/main/master/class/MessageAttachment
+     */
+    const attachment = new MessageAttachment(buffer, 'memes.txt');
+    // Send the attachment in the message channel with a content
+    message.channel.send(`${message.author}, here are your memes!`, attachment);
+  }
 });
 
-// Log our bot in using the token from https://discordapp.com/developers/applications/me
+// Log our bot in using the token from https://discord.com/developers/applications
 client.login('your token here');
 ```
 

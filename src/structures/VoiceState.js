@@ -1,8 +1,8 @@
 'use strict';
 
 const Base = require('./Base');
-const { browser } = require('../util/Constants');
 const { Error, TypeError } = require('../errors');
+const { browser } = require('../util/Constants');
 
 /**
  * Represents the voice state for a Guild Member.
@@ -49,10 +49,20 @@ class VoiceState extends Base {
      */
     this.selfMute = data.self_mute;
     /**
+     * Whether this member's camera is enabled
+     * @type {boolean}
+     */
+    this.selfVideo = data.self_video;
+    /**
      * The session ID of this member's connection
      * @type {?string}
      */
     this.sessionID = data.session_id;
+    /**
+     * Whether this member is streaming using "Go Live"
+     * @type {boolean}
+     */
+    this.streaming = data.self_stream || false;
     /**
      * The ID of the voice channel that this member is in
      * @type {?Snowflake}
@@ -67,7 +77,7 @@ class VoiceState extends Base {
    * @readonly
    */
   get member() {
-    return this.guild.members.get(this.id) || null;
+    return this.guild.members.cache.get(this.id) || null;
   }
 
   /**
@@ -76,7 +86,7 @@ class VoiceState extends Base {
    * @readonly
    */
   get channel() {
-    return this.guild.channels.get(this.channelID) || null;
+    return this.guild.channels.cache.get(this.channelID) || null;
   }
 
   /**
@@ -114,9 +124,7 @@ class VoiceState extends Base {
    * @readonly
    */
   get speaking() {
-    return this.channel && this.channel.connection ?
-      Boolean(this.channel.connection._speaking.get(this.id)) :
-      null;
+    return this.channel && this.channel.connection ? Boolean(this.channel.connection._speaking.get(this.id)) : null;
   }
 
   /**
@@ -140,16 +148,25 @@ class VoiceState extends Base {
   }
 
   /**
-   * Moves the member to a different channel, or kick them from the one they're in.
-   * @param {ChannelResolvable|null} [channel] Channel to move the member to, or `null` if you want to kick them from
-   * voice
-   * @param {string} [reason] Reason for moving member to another channel or kicking
+   * Kicks the member from the voice channel.
+   * @param {string} [reason] Reason for kicking member from the channel
+   * @returns {Promise<GuildMember>}
+   */
+  kick(reason) {
+    return this.setChannel(null, reason);
+  }
+
+  /**
+   * Moves the member to a different channel, or disconnects them from the one they're in.
+   * @param {ChannelResolvable|null} [channel] Channel to move the member to, or `null` if you want to disconnect them
+   * from voice.
+   * @param {string} [reason] Reason for moving member to another channel or disconnecting
    * @returns {Promise<GuildMember>}
    */
   setChannel(channel, reason) {
-    return this.member ?
-      this.member.edit({ channel }, reason) :
-      Promise.reject(new Error('VOICE_STATE_UNCACHED_MEMBER'));
+    return this.member
+      ? this.member.edit({ channel }, reason)
+      : Promise.reject(new Error('VOICE_STATE_UNCACHED_MEMBER'));
   }
 
   /**

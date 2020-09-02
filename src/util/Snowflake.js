@@ -36,12 +36,13 @@ class SnowflakeUtil {
     if (timestamp instanceof Date) timestamp = timestamp.getTime();
     if (typeof timestamp !== 'number' || isNaN(timestamp)) {
       throw new TypeError(
-        `"timestamp" argument must be a number (received ${isNaN(timestamp) ? 'NaN' : typeof timestamp})`
+        `"timestamp" argument must be a number (received ${isNaN(timestamp) ? 'NaN' : typeof timestamp})`,
       );
     }
     if (INCREMENT >= 4095) INCREMENT = 0;
-    // eslint-disable-next-line max-len
-    const BINARY = `${(timestamp - EPOCH).toString(2).padStart(42, '0')}0000100000${(INCREMENT++).toString(2).padStart(12, '0')}`;
+    const BINARY = `${(timestamp - EPOCH).toString(2).padStart(42, '0')}0000100000${(INCREMENT++)
+      .toString(2)
+      .padStart(12, '0')}`;
     return Util.binaryToID(BINARY);
   }
 
@@ -71,7 +72,9 @@ class SnowflakeUtil {
       binary: BINARY,
     };
     Object.defineProperty(res, 'date', {
-      get: function get() { return new Date(this.timestamp); },
+      get: function get() {
+        return new Date(this.timestamp);
+      },
       enumerable: true,
     });
     return res;

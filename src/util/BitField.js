@@ -7,7 +7,7 @@ const { RangeError } = require('../errors');
  */
 class BitField {
   /**
-   * @param {BitFieldResolvable} [bits=0] Bits(s) to read from
+   * @param {BitFieldResolvable} [bits=0] Bit(s) to read from
    */
   constructor(bits) {
     /**
@@ -15,6 +15,15 @@ class BitField {
      * @type {number}
      */
     this.bitfield = this.constructor.resolve(bits);
+  }
+
+  /**
+   * Checks whether the bitfield has a bit, or any of multiple bits.
+   * @param {BitFieldResolvable} bit Bit(s) to check for
+   * @returns {boolean}
+   */
+  any(bit) {
+    return (this.bitfield & this.constructor.resolve(bit)) !== 0;
   }
 
   /**
@@ -39,7 +48,7 @@ class BitField {
 
   /**
    * Gets all given bits that are missing from the bitfield.
-   * @param {BitFieldResolvable} bits Bits(s) to check for
+   * @param {BitFieldResolvable} bits Bit(s) to check for
    * @param {...*} hasParams Additional parameters for the has method, if any
    * @returns {string[]}
    */
@@ -94,7 +103,7 @@ class BitField {
    */
   serialize(...hasParams) {
     const serialized = {};
-    for (const perm in this.constructor.FLAGS) serialized[perm] = this.has(perm, ...hasParams);
+    for (const [flag, bit] of Object.entries(this.constructor.FLAGS)) serialized[flag] = this.has(bit, ...hasParams);
     return serialized;
   }
 
@@ -137,8 +146,10 @@ class BitField {
     if (typeof bit === 'number' && bit >= 0) return bit;
     if (bit instanceof BitField) return bit.bitfield;
     if (Array.isArray(bit)) return bit.map(p => this.resolve(p)).reduce((prev, p) => prev | p, 0);
-    if (typeof bit === 'string') return this.FLAGS[bit];
-    throw new RangeError('BITFIELD_INVALID');
+    if (typeof bit === 'string' && typeof this.FLAGS[bit] !== 'undefined') return this.FLAGS[bit];
+    const error = new RangeError('BITFIELD_INVALID');
+    error.bit = bit;
+    throw error;
   }
 }
 

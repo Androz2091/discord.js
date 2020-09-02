@@ -3,8 +3,8 @@
 require('setimmediate');
 const EventEmitter = require('events');
 const RESTManager = require('../rest/RESTManager');
-const Util = require('../util/Util');
 const { DefaultOptions } = require('../util/Constants');
+const Util = require('../util/Util');
 
 /**
  * The base class for all clients.
@@ -137,6 +137,28 @@ class BaseClient extends EventEmitter {
   clearImmediate(immediate) {
     clearImmediate(immediate);
     this._immediates.delete(immediate);
+  }
+
+  /**
+   * Increments max listeners by one, if they are not zero.
+   * @private
+   */
+  incrementMaxListeners() {
+    const maxListeners = this.getMaxListeners();
+    if (maxListeners !== 0) {
+      this.setMaxListeners(maxListeners + 1);
+    }
+  }
+
+  /**
+   * Decrements max listeners by one, if they are not zero.
+   * @private
+   */
+  decrementMaxListeners() {
+    const maxListeners = this.getMaxListeners();
+    if (maxListeners !== 0) {
+      this.setMaxListeners(maxListeners - 1);
+    }
   }
 
   toJSON(...props) {

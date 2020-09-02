@@ -1,3 +1,5 @@
+'use strict';
+
 /**
  * An example of how you can send embeds
  */
@@ -26,7 +28,7 @@ client.on('message', message => {
       // Set the title of the field
       .setTitle('A slick little embed')
       // Set the color of the embed
-      .setColor(0xFF0000)
+      .setColor(0xff0000)
       // Set the main content of the embed
       .setDescription('Hello, this is a slick embed!');
     // Send the embed to the same channel as the message
@@ -34,5 +36,5 @@ client.on('message', message => {
   }
 });
 
-// Log our bot in using the token from https://discordapp.com/developers/applications/me
+// Log our bot in using the token from https://discord.com/developers/applications
 client.login('your token here');

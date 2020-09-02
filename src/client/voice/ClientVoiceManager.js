@@ -1,10 +1,9 @@
 'use strict';
 
-const Collection = require('../../util/Collection');
-const { VoiceStatus } = require('../../util/Constants');
-const VoiceConnection = require('./VoiceConnection');
 const VoiceBroadcast = require('./VoiceBroadcast');
+const VoiceConnection = require('./VoiceConnection');
 const { Error } = require('../../errors');
+const Collection = require('../../util/Collection');
 
 /**
  * Manages voice connections for the client
@@ -52,11 +51,12 @@ class ClientVoiceManager {
     const connection = this.connections.get(guild_id);
     this.client.emit('debug', `[VOICE] connection? ${!!connection}, ${guild_id} ${session_id} ${channel_id}`);
     if (!connection) return;
-    if (!channel_id && connection.status !== VoiceStatus.DISCONNECTED) {
+    if (!channel_id) {
       connection._disconnect();
+      this.connections.delete(guild_id);
       return;
     }
-    connection.channel = this.client.channels.get(channel_id);
+    connection.channel = this.client.channels.cache.get(channel_id);
     connection.setSessionID(session_id);
   }
 
@@ -83,7 +83,8 @@ class ClientVoiceManager {
       } else {
         connection = new VoiceConnection(this, channel);
         connection.on('debug', msg =>
-          this.client.emit('debug', `[VOICE (${channel.guild.id}:${connection.status})]: ${msg}`));
+          this.client.emit('debug', `[VOICE (${channel.guild.id}:${connection.status})]: ${msg}`),
+        );
         connection.authenticate();
         this.connections.set(channel.guild.id, connection);
       }
@@ -93,12 +94,13 @@ class ClientVoiceManager {
         reject(reason);
       });
 
+      connection.on('error', reject);
+
       connection.once('authenticated', () => {
         connection.once('ready', () => {
           resolve(connection);
           connection.removeListener('error', reject);
         });
-        connection.on('error', reject);
         connection.once('disconnect', () => this.connections.delete(channel.guild.id));
       });
     });

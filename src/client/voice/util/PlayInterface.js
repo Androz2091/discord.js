@@ -11,7 +11,6 @@ const { Error } = require('../../../errors');
  * @property {number} [seek=0] The time to seek to, will be ignored when playing `ogg/opus` or `webm/opus` streams
  * @property {number|boolean} [volume=1] The volume to play at. Set this to false to disable volume transforms for
  * this stream to improve performance.
- * @property {number} [passes=1] How many times to send the voice packet to reduce packet loss
  * @property {number} [plp] Expected packet loss percentage
  * @property {boolean} [fec] Enabled forward error correction
  * @property {number|string} [bitrate=96] The bitrate (quality) of the audio in kbps.
@@ -52,7 +51,7 @@ class PlayInterface {
    * connection.play(ytdl('https://www.youtube.com/watch?v=ZlAU_w7-Xp8', { quality: 'highestaudio' }));
    * @example
    * // Play a voice broadcast
-   * const broadcast = client.createVoiceBroadcast();
+   * const broadcast = client.voice.createBroadcast();
    * broadcast.play('/home/hydrabolt/audio.mp3');
    * connection.play(broadcast);
    * @example
@@ -61,7 +60,8 @@ class PlayInterface {
    * @returns {StreamDispatcher}
    */
   play(resource, options = {}) {
-    if (resource instanceof Broadcast) {
+    const VoiceBroadcast = require('../VoiceBroadcast');
+    if (resource instanceof VoiceBroadcast) {
       if (!this.player.playBroadcast) throw new Error('VOICE_PLAY_INTERFACE_NO_BROADCAST');
       return this.player.playBroadcast(resource, options);
     }
@@ -86,12 +86,9 @@ class PlayInterface {
 
   static applyToClass(structure) {
     for (const prop of ['play']) {
-      Object.defineProperty(structure.prototype, prop,
-        Object.getOwnPropertyDescriptor(PlayInterface.prototype, prop));
+      Object.defineProperty(structure.prototype, prop, Object.getOwnPropertyDescriptor(PlayInterface.prototype, prop));
     }
   }
 }
 
 module.exports = PlayInterface;
-
-const Broadcast = require('../VoiceBroadcast');

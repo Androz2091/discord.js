@@ -1,9 +1,10 @@
 'use strict';
 
-const FormData = require('form-data');
 const https = require('https');
-const { browser, UserAgent } = require('../util/Constants');
+const FormData = require('@discordjs/form-data');
+const AbortController = require('abort-controller');
 const fetch = require('node-fetch');
+const { browser, UserAgent } = require('../util/Constants');
 
 if (https.Agent) var agent = new https.Agent({ keepAlive: true });
 
@@ -17,16 +18,19 @@ class APIRequest {
 
     let queryString = '';
     if (options.query) {
-      // Filter out undefined query options
-      const query = Object.entries(options.query).filter(([, value]) => value !== null && typeof value !== 'undefined');
+      const query = Object.entries(options.query)
+        .filter(([, value]) => ![null, 'null', 'undefined'].includes(value) && typeof value !== 'undefined')
+        .flatMap(([key, value]) => (Array.isArray(value) ? value.map(v => [key, v]) : [[key, value]]));
       queryString = new URLSearchParams(query).toString();
     }
     this.path = `${path}${queryString && `?${queryString}`}`;
   }
 
   make() {
-    const API = this.options.versioned === false ? this.client.options.http.api :
-      `${this.client.options.http.api}/v${this.client.options.http.version}`;
+    const API =
+      this.options.versioned === false
+        ? this.client.options.http.api
+        : `${this.client.options.http.api}/v${this.client.options.http.version}`;
     const url = API + this.path;
     let headers = {};
 
@@ -36,22 +40,26 @@ class APIRequest {
     if (this.options.headers) headers = Object.assign(headers, this.options.headers);
 
     let body;
-    if (this.options.files) {
+    if (this.options.files && this.options.files.length) {
       body = new FormData();
       for (const file of this.options.files) if (file && file.file) body.append(file.name, file.file, file.name);
       if (typeof this.options.data !== 'undefined') body.append('payload_json', JSON.stringify(this.options.data));
       if (!browser) headers = Object.assign(headers, body.getHeaders());
-    } else if (this.options.data != null) { // eslint-disable-line eqeqeq
+      // eslint-disable-next-line eqeqeq
+    } else if (this.options.data != null) {
       body = JSON.stringify(this.options.data);
       headers['Content-Type'] = 'application/json';
     }
 
+    const controller = new AbortController();
+    const timeout = this.client.setTimeout(() => controller.abort(), this.client.options.restRequestTimeout);
     return fetch(url, {
       method: this.method,
       headers,
       agent,
       body,
-    });
+      signal: controller.signal,
+    }).finally(() => this.client.clearTimeout(timeout));
   }
 }
 

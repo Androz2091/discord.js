@@ -1,8 +1,8 @@
 'use strict';
 
-const Snowflake = require('../util/Snowflake');
 const Base = require('./Base');
 const { ChannelTypes } = require('../util/Constants');
+const Snowflake = require('../util/Snowflake');
 
 /**
  * Represents any channel on Discord.
@@ -19,6 +19,8 @@ class Channel extends Base {
      * * `text` - a guild text channel
      * * `voice` - a guild voice channel
      * * `category` - a guild category channel
+     * * `news` - a guild news channel
+     * * `store` - a guild store channel
      * * `unknown` - a generic channel of unknown type, could be Channel or GuildChannel
      * @type {string}
      */
@@ -80,25 +82,42 @@ class Channel extends Base {
    *   .catch(console.error);
    */
   delete() {
-    return this.client.api.channels(this.id).delete().then(() => this);
+    return this.client.api
+      .channels(this.id)
+      .delete()
+      .then(() => this);
   }
 
   /**
    * Fetches this channel.
+   * @param {boolean} [force=false] Whether to skip the cache check and request the API
    * @returns {Promise<Channel>}
    */
-  fetch() {
-    return this.client.channels.fetch(this.id, true);
+  fetch(force = false) {
+    return this.client.channels.fetch(this.id, true, force);
+  }
+
+  /**
+   * Indicates whether this channel is text-based.
+   * @returns {boolean}
+   */
+  isText() {
+    return 'messages' in this;
   }
 
   static create(client, data, guild) {
     const Structures = require('../util/Structures');
     let channel;
-    if (data.type === ChannelTypes.DM || (data.type !== ChannelTypes.GROUP && !data.guild_id && !guild)) {
-      const DMChannel = Structures.get('DMChannel');
-      channel = new DMChannel(client, data);
+    if (!data.guild_id && !guild) {
+      if ((data.recipients && data.type !== ChannelTypes.GROUP) || data.type === ChannelTypes.DM) {
+        const DMChannel = Structures.get('DMChannel');
+        channel = new DMChannel(client, data);
+      } else if (data.type === ChannelTypes.GROUP) {
+        const PartialGroupDMChannel = require('./PartialGroupDMChannel');
+        channel = new PartialGroupDMChannel(client, data);
+      }
     } else {
-      guild = guild || client.guilds.get(data.guild_id);
+      guild = guild || client.guilds.cache.get(data.guild_id);
       if (guild) {
         switch (data.type) {
           case ChannelTypes.TEXT: {
@@ -127,7 +146,7 @@ class Channel extends Base {
             break;
           }
         }
-        if (channel) guild.channels.set(channel.id, channel);
+        if (channel) guild.channels.cache.set(channel.id, channel);
       }
     }
     return channel;
